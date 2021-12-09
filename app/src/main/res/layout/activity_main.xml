@@ -21,7 +21,6 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginHorizontal="25dp"
-        android:background="@drawable/edit_text_component_background"
         android:inputType="textEmailAddress"
 
 

@@ -6,9 +6,7 @@ import android.graphics.drawable.GradientDrawable
 import android.text.InputType.TYPE_CLASS_PHONE
 import android.text.InputType.TYPE_TEXT_VARIATION_EMAIL_ADDRESS
 import android.util.AttributeSet
-import android.widget.EditText
-import android.widget.ListView
-import android.widget.TextView
+import android.widget.*
 import androidx.appcompat.content.res.AppCompatResources
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.constraintlayout.widget.ConstraintSet
@@ -26,6 +24,7 @@ class EditTextComponent @JvmOverloads constructor(
         // inflate the default layout
         inflate(context, R.layout.edit_text_component, this)
 
+        val spinner: Spinner = findViewById(R.id.numberListSpinner)
 
 
     }
