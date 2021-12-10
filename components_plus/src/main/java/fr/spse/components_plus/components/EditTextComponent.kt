@@ -1,17 +1,12 @@
 package fr.spse.components_plus.components
 
 import android.content.Context
-import android.graphics.Color
-import android.graphics.drawable.GradientDrawable
+import android.graphics.Rect
 import android.text.InputType.TYPE_CLASS_PHONE
 import android.text.InputType.TYPE_TEXT_VARIATION_EMAIL_ADDRESS
 import android.util.AttributeSet
 import android.widget.*
-import androidx.appcompat.content.res.AppCompatResources
 import androidx.constraintlayout.widget.ConstraintLayout
-import androidx.constraintlayout.widget.ConstraintSet
-import androidx.constraintlayout.widget.ConstraintSet.LEFT
-import androidx.constraintlayout.widget.ConstraintSet.PARENT_ID
 import fr.spse.components_plus.R
 
 class EditTextComponent @JvmOverloads constructor(
@@ -19,14 +14,16 @@ class EditTextComponent @JvmOverloads constructor(
 ) : ConstraintLayout(context, attrs){
     // Initialise a bunch of stuff I guess
 
+    override fun onFocusChanged(gainFocus: Boolean, direction: Int, previouslyFocusedRect: Rect?) {
+        super.onFocusChanged(gainFocus, direction, previouslyFocusedRect)
+        println(gainFocus)
+    }
 
     init {
         // inflate the default layout
-        inflate(context, R.layout.edit_text_component, this)
+        inflate(context, R.layout.edit_text_focused_component, this)
 
-        val spinner: Spinner = findViewById(R.id.numberListSpinner)
-
-
+        val editText : EditText = findViewById(R.id.component_simple_edit_text);
     }
 }
 
@@ -46,4 +43,17 @@ fun EditText.isInputValid() : Boolean{
 
     // Else default behavior for now
     return text.toString().length >= 3
+}
+
+class SimpleEditText @JvmOverloads constructor(context: Context, attrs: AttributeSet? = null) : androidx.appcompat.widget.AppCompatEditText(context, attrs){
+    init {
+
+    }
+
+    override fun onFocusChanged(focused: Boolean, direction: Int, previouslyFocusedRect: Rect?) {
+        super.onFocusChanged(focused, direction, previouslyFocusedRect)
+        println(focused)
+        // TODO change layout on the fly
+    }
+
 }
