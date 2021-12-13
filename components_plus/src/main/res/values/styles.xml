@@ -4,6 +4,7 @@
     <style name="componentPlusBaseStyle" parent="Theme.AppCompat.DayNight">
         <!-- Nice little font -->
         <item name="fontFamily">@font/nunito_sans</item>
+        <item name="android:textSize">20sp</item>
 
         <!-- For the resting Spinner style -->
         <item name="android:spinnerItemStyle">@style/spinnerBoldItemStyle</item>
@@ -16,24 +17,15 @@
     <style name="spinnerBoldItemStyle">
         <item name="android:textSize">20sp</item>
         <item name="android:textStyle">bold</item>
-
+        <item name="android:gravity">center</item>
+        <item name="android:textColor">?attr/colorOnSurface</item>
     </style>
 
     <style name="spinnerBoldDropDownItemStyle">
         <item name="android:textSize">16sp</item>
         <item name="android:textStyle">bold</item>
-
-        <item name="dropdownListPreferredItemHeight">1dp</item>
-        <item name="listPreferredItemHeightLarge">1dp</item>
-        <item name="listPreferredItemHeightSmall">1dp</item>
-        <item name="listPreferredItemPaddingStart">1dp</item>
-        <item name="listPreferredItemPaddingEnd">1dp</item>
-
-        <item name="android:layout_height">150dp</item>
-        <item name="android:layout_margin">0dp</item>
-        <item name="android:padding">0dp</item>
-
         <item name="android:gravity">center</item>
+        <item name="android:textColor">?attr/colorOnSurface</item>
     </style>
 
 </resources>
