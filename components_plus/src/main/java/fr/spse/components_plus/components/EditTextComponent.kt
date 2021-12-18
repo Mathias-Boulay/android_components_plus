@@ -1,18 +1,32 @@
 package fr.spse.components_plus.components
 
 import android.animation.ValueAnimator
+import android.annotation.SuppressLint
 import android.content.Context
 import android.graphics.Color
+import android.graphics.Rect
 import android.graphics.drawable.ClipDrawable
 import android.graphics.drawable.ColorDrawable
 import android.graphics.drawable.GradientDrawable
-import android.text.InputType.*
+import android.text.TextWatcher
 import android.util.AttributeSet
 import android.view.Gravity
 import android.view.View
 import android.widget.*
 import androidx.constraintlayout.widget.ConstraintLayout
 import fr.spse.components_plus.R
+import fr.spse.components_plus.utils.SimpleInputType
+import fr.spse.components_plus.utils.SimpleInputType.DATE
+import fr.spse.components_plus.utils.SimpleInputType.DATETIME
+import fr.spse.components_plus.utils.SimpleInputType.NUMBER_PASSWORD
+import fr.spse.components_plus.utils.SimpleInputType.PHONE
+import fr.spse.components_plus.utils.SimpleInputType.TEXT_EMAIL_ADDRESS
+import fr.spse.components_plus.utils.SimpleInputType.TEXT_PASSWORD
+import fr.spse.components_plus.utils.SimpleInputType.TEXT_PERSON
+import fr.spse.components_plus.utils.SimpleInputType.TEXT_VISIBLE_PASSWORD
+import fr.spse.components_plus.utils.SimpleInputType.TEXT_WEB_EMAIL_ADDRESS
+import fr.spse.components_plus.utils.SimpleInputType.TEXT_WEB_PASSWORD
+import fr.spse.components_plus.utils.SimpleInputType.TIME
 import fr.spse.components_plus.utils.dpToPx
 import fr.spse.components_plus.utils.spToPx
 
@@ -22,6 +36,11 @@ private const val HINT_BIG_SIZE = 20F;
 private const val BACKGROUND_FOCUSED_COLOR_STROKE = Color.CYAN
 private const val BACKGROUND_UNFOCUSED_COLOR_STROKE = Color.GRAY
 
+@SuppressLint("ResourceType")
+/**
+ * A simple editText with easy customisation.
+ * Some android xml settings are supported such as hint, input type and ime options
+ */
 class EditTextComponent @JvmOverloads constructor(
     context: Context, attrs: AttributeSet? = null
 ) : ConstraintLayout(context, attrs){
@@ -65,12 +84,14 @@ class EditTextComponent @JvmOverloads constructor(
         hintBackgroundDrawable.level = 5000 // Bottom half is displayed
         hintTextView.background = hintBackgroundDrawable
 
-        // The listener allows for complex
+        // Triggers animations and notify of the focus change
         editText.setOnFocusChangeListener{ view : View, focus : Boolean ->
             if (!focus and (editText.text.toString().isEmpty())) makeHintBig()
             else makeHintSmall()
             setBackgroundState(focus)
-            //setErrorMessage("test")
+
+            // Trigger upper echelon
+            onFocusChangeListener?.onFocusChange(view, focus)
         }
 
         // Prepare the animators
@@ -88,7 +109,19 @@ class EditTextComponent @JvmOverloads constructor(
 
         animatorColor = ValueAnimator.ofArgb(BACKGROUND_UNFOCUSED_COLOR_STROKE,
                                                         BACKGROUND_FOCUSED_COLOR_STROKE)
+
+
+        /* Add support for classic xml attributes */
+        val attr = IntArray(2){android.R.attr.hint; android.R.attr.inputType; android.R.attr.imeOptions}
+        val attributeArray = getContext().obtainStyledAttributes(attrs, attr)
+        setHint(attributeArray.getString(0))
+        setInputType(attributeArray.getInt(1, SimpleInputType.TEXT))
+        editText.imeOptions = attributeArray.getInt(2, 0)
+
+        attributeArray.recycle()
     }
+
+
 
     /** Animate the background color from one state to the other */
     private fun setBackgroundState(isFocused : Boolean){
@@ -136,26 +169,21 @@ class EditTextComponent @JvmOverloads constructor(
      *  Also set a nice image if available
      */
     fun setInputType(inputType: Int) {
-        // Set the custom image resource
-        var imageResource = android.R.color.transparent
-        if (inputType == TYPE_CLASS_PHONE){
-            imageResource = R.drawable.ic_person
-            numberSpinner.visibility = VISIBLE
-            numberSpinner.isEnabled = true
-        }else{
-            //Not a phone related thing, disable the spinner
-            numberSpinner.visibility = INVISIBLE
-            numberSpinner.isEnabled = false
 
-            when {
-                inputType and TYPE_TEXT_VARIATION_EMAIL_ADDRESS == TYPE_TEXT_VARIATION_EMAIL_ADDRESS -> imageResource = R.drawable.ic_mail
-                (inputType and TYPE_NUMBER_VARIATION_PASSWORD == TYPE_NUMBER_VARIATION_PASSWORD) or
-                        (inputType and TYPE_TEXT_VARIATION_PASSWORD == TYPE_TEXT_VARIATION_PASSWORD) or
-                        (inputType and TYPE_TEXT_VARIATION_VISIBLE_PASSWORD == TYPE_TEXT_VARIATION_VISIBLE_PASSWORD) or
-                        (inputType and TYPE_TEXT_VARIATION_WEB_PASSWORD == TYPE_TEXT_VARIATION_WEB_PASSWORD) -> imageResource = R.drawable.ic_password
-                inputType and TYPE_TEXT_VARIATION_PERSON_NAME == TYPE_TEXT_VARIATION_PERSON_NAME -> imageResource = R.drawable.ic_person
-            }
+        // Add the spinner on the fly for number dialogs
+        numberSpinner.visibility = if (inputType == PHONE) VISIBLE else GONE
+        numberSpinner.isEnabled = inputType == PHONE
+
+        // Set the custom image resource
+        val imageResource : Int = when(inputType){
+            PHONE -> R.drawable.ic_phone
+            TEXT_PERSON -> R.drawable.ic_person
+            DATE, DATETIME, TIME -> R.drawable.ic_date
+            TEXT_EMAIL_ADDRESS, TEXT_WEB_EMAIL_ADDRESS -> R.drawable.ic_mail
+            TEXT_PASSWORD, NUMBER_PASSWORD, TEXT_VISIBLE_PASSWORD, TEXT_WEB_PASSWORD -> R.drawable.ic_password
+            else -> android.R.color.transparent
         }
+
         decorativeImage.setImageResource(imageResource)
 
         // Pass the type to the editText
@@ -179,23 +207,40 @@ class EditTextComponent @JvmOverloads constructor(
         messageTextView.text = ""
     }
 
-}
+    /* Wrappers for some usual stuff for an EditText, since we don't want to pass the it directly */
+    /** @return The text as a string, with the number prefix if required */
+    fun getText() : String {
+        var text = editText.text.toString()
+        if(editText.inputType == PHONE)
+            text = numberSpinner.selectedItem.toString() + text
 
-fun EditText.isPhoneInput() : Boolean{
-    return (inputType and TYPE_CLASS_PHONE) == TYPE_CLASS_PHONE
-}
+        return text
+    }
 
-fun EditText.isMailInput() : Boolean{
-    return (inputType and TYPE_TEXT_VARIATION_EMAIL_ADDRESS) == TYPE_TEXT_VARIATION_EMAIL_ADDRESS
-}
+    /** Wrapper for setText from editText */
+    fun setText(text : String){
+        editText.setText(text)
+    }
 
-fun EditText.isInputValid() : Boolean{
-    if(isPhoneInput())
-        return text.toString().length <= 15 // maximum chars for a phone number
-    if(isMailInput())
-        return text.toString().matches(Regex("^[^@\\s]+@[^@\\s]+\\.[^@\\s]+\$"))
+    /** Set the hint text on the animated textview */
+    fun setHint(hint : String?){
+        hintTextView.visibility = if (hint == null || hint.isEmpty() ) INVISIBLE else VISIBLE
+        hintTextView.text = hint
+    }
 
-    // Else default behavior for now
-    return text.toString().length >= 3
+    /** Wrapper to add to the TextWatcher */
+    fun setTextWatcher(watcher: TextWatcher){
+        editText.addTextChangedListener(watcher)
+    }
+
+    /** Wrapper to remove the TextWatcher */
+    fun removeTextWatcher(watcher: TextWatcher){
+        editText.removeTextChangedListener(watcher)
+    }
+
+    /** Wrapper for notifying focus change */
+    override fun setOnFocusChangeListener(test : OnFocusChangeListener){
+        super.setOnFocusChangeListener(test)
+    }
 }
 
