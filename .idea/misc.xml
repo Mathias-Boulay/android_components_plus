@@ -5,10 +5,11 @@
       <map>
         <entry key="..\:/Github/android_components_plus/app/src/main/res/layout/activity_main.xml" value="0.3875" />
         <entry key="..\:/Github/android_components_plus/components_plus/src/main/res/drawable/edit_text_component_background.xml" value="0.4036458333333333" />
-        <entry key="..\:/Github/android_components_plus/components_plus/src/main/res/layout/edit_text_component.xml" value="0.3875" />
+        <entry key="..\:/Github/android_components_plus/components_plus/src/main/res/layout/edit_text_component.xml" value="0.33" />
       </map>
     </option>
   </component>
+  <component name="ExternalStorageConfigurationManager" enabled="true" />
   <component name="ProjectRootManager" version="2" languageLevel="JDK_11" default="true" project-jdk-name="1.8" project-jdk-type="JavaSDK">
     <output url="file://$PROJECT_DIR$/build/classes" />
   </component>
