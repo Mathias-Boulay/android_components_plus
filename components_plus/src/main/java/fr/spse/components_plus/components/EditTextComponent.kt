@@ -4,7 +4,6 @@ import android.animation.ValueAnimator
 import android.annotation.SuppressLint
 import android.content.Context
 import android.graphics.Color
-import android.graphics.Rect
 import android.graphics.drawable.ClipDrawable
 import android.graphics.drawable.ColorDrawable
 import android.graphics.drawable.GradientDrawable
@@ -30,11 +29,8 @@ import fr.spse.components_plus.utils.SimpleInputType.TIME
 import fr.spse.components_plus.utils.dpToPx
 import fr.spse.components_plus.utils.spToPx
 
-private const val HINT_SMALL_SIZE = 12F;
-private const val HINT_BIG_SIZE = 20F;
-
-private const val BACKGROUND_FOCUSED_COLOR_STROKE = Color.CYAN
-private const val BACKGROUND_UNFOCUSED_COLOR_STROKE = Color.GRAY
+private const val HINT_SMALL_SIZE = 12F
+private const val HINT_BIG_SIZE = 20F
 
 @SuppressLint("ResourceType")
 /**
@@ -44,49 +40,74 @@ private const val BACKGROUND_UNFOCUSED_COLOR_STROKE = Color.GRAY
 class EditTextComponent @JvmOverloads constructor(
     context: Context, attrs: AttributeSet? = null
 ) : ConstraintLayout(context, attrs){
+    /* Colors */
+    private val mStrokeUnfocusedColor : Int
+    private val mStrokeFocusedColor : Int
+    private val mStrokeErrorColor : Int
+    private val mStrokeSuccessColor : Int
+
     private val BACKGROUND_STROKE_SIZE = 2.5.dpToPx(context).toInt()
     private val BACKGROUND_STROKE_RADIUS = 15.dpToPx(context)
 
     // Views
-    private val editText : EditText
-    private val hintTextView : TextView
-    private val decorativeImage : ImageView
-    private val messageTextView : TextView
-    private val numberSpinner : Spinner
+    private val mEditText : EditText
+    private val mHintTextView : TextView
+    private val mDecorativeImage : ImageView
+    private val mMessageTextView : TextView
+    private val mNumberSpinner : Spinner
 
     // Backgrounds
-    private val backgroundDrawable = GradientDrawable()
+    private val mBackgroundDrawable = GradientDrawable()
     /* We can't get the gradient drawable colors, so I keep an int to the useful one */
-    private var backgroundStrokeColor : Int = BACKGROUND_UNFOCUSED_COLOR_STROKE
-    private val hintBackgroundDrawable : ClipDrawable
-    private val animatorHintText : ValueAnimator
-    private var animatorColor : ValueAnimator
-    private var colorAnimationListener : ValueAnimator.AnimatorUpdateListener? = null
+    private var mBackgroundStrokeColor : Int
+    private val mHintBackgroundDrawable : ClipDrawable
+    private val mAnimatorHintText : ValueAnimator
+    private var mAnimatorColor : ValueAnimator
+    private var mColorAnimationListener : ValueAnimator.AnimatorUpdateListener? = null
 
     init {
+        /* Add support for classic xml attributes */
+        val attr = intArrayOf(  android.R.attr.hint,                // The hint
+                                android.R.attr.inputType,           // Input type
+                                android.R.attr.imeOptions,          // ime option
+                                android.R.attr.colorBackground,     // background color
+                                R.attr.colorControlNormal,          // stroke focused color
+                                R.attr.colorControlActivated,       // Stroke focused color
+                                R.attr.colorError                   // Error color
+        )
+        val attributeArray = getContext().obtainStyledAttributes(attrs, attr)
+
+        /* Get the colors */
+        mStrokeFocusedColor = attributeArray.getColor(5, Color.CYAN)
+        mStrokeUnfocusedColor = attributeArray.getColor(4, Color.GRAY)
+        mStrokeErrorColor = attributeArray.getColor(6, Color.RED)
+        mStrokeSuccessColor = Color.parseColor("#FF4CBB17") // Apple green
+
+
         // inflate the default layout
         inflate(context, R.layout.edit_text_component, this)
-        editText = findViewById(R.id.edit_text_component_simple_edit_text)
-        hintTextView = findViewById(R.id.edit_text_component_hint_textview)
-        decorativeImage = findViewById(R.id.edit_text_component_decorative_image)
-        messageTextView = findViewById(R.id.edit_text_component_additional_message)
-        numberSpinner = findViewById(R.id.edit_text_component_number_spinner)
+        mEditText = findViewById(R.id.edit_text_component_simple_edit_text)
+        mHintTextView = findViewById(R.id.edit_text_component_hint_textview)
+        mDecorativeImage = findViewById(R.id.edit_text_component_decorative_image)
+        mMessageTextView = findViewById(R.id.edit_text_component_additional_message)
+        mNumberSpinner = findViewById(R.id.edit_text_component_number_spinner)
 
         // Use a custom background, we keep a reference to tweak its colors
-        backgroundDrawable.setColor(Color.WHITE)
-        backgroundDrawable.setStroke(BACKGROUND_STROKE_SIZE, BACKGROUND_UNFOCUSED_COLOR_STROKE)
-        backgroundDrawable.cornerRadius = BACKGROUND_STROKE_RADIUS
-        editText.background = backgroundDrawable
+        mBackgroundStrokeColor = mStrokeUnfocusedColor
+        mBackgroundDrawable.setColor(attributeArray.getColor(3, Color.WHITE))
+        mBackgroundDrawable.setStroke(BACKGROUND_STROKE_SIZE, mBackgroundStrokeColor)
+        mBackgroundDrawable.cornerRadius = BACKGROUND_STROKE_RADIUS
+        mEditText.background = mBackgroundDrawable
 
         // Allow nice spacing when in small state
-        val dummyDrawable = ColorDrawable(Color.WHITE)
-        hintBackgroundDrawable = ClipDrawable(dummyDrawable, Gravity.BOTTOM, ClipDrawable.VERTICAL)
-        hintBackgroundDrawable.level = 5000 // Bottom half is displayed
-        hintTextView.background = hintBackgroundDrawable
+        val dummyDrawable = ColorDrawable(attributeArray.getColor(3, Color.WHITE))
+        mHintBackgroundDrawable = ClipDrawable(dummyDrawable, Gravity.BOTTOM, ClipDrawable.VERTICAL)
+        mHintBackgroundDrawable.level = 5000 // Bottom half is displayed
+        mHintTextView.background = mHintBackgroundDrawable
 
         // Triggers animations and notify of the focus change
-        editText.setOnFocusChangeListener{ view : View, focus : Boolean ->
-            if (!focus and (editText.text.toString().isEmpty())) makeHintBig()
+        mEditText.setOnFocusChangeListener{ view : View, focus : Boolean ->
+            if (!focus and (mEditText.text.toString().isEmpty())) makeHintBig()
             else makeHintSmall()
             setBackgroundState(focus)
 
@@ -95,28 +116,24 @@ class EditTextComponent @JvmOverloads constructor(
         }
 
         // Prepare the animators
-        val params = hintTextView.layoutParams as ConstraintLayout.LayoutParams
-        animatorHintText = ValueAnimator.ofFloat(0F, 1F);
-        animatorHintText.addUpdateListener {
+        val params = mHintTextView.layoutParams as ConstraintLayout.LayoutParams
+        mAnimatorHintText = ValueAnimator.ofFloat(0F, 1F);
+        mAnimatorHintText.addUpdateListener {
             // Height difference
             params.verticalBias = 0.65F * (1- it.animatedFraction)
             //White border of the side
             val paddingHorizontal = (10.dpToPx(context) * it.animatedFraction).toInt()
-            hintTextView.setPadding(paddingHorizontal, 0, paddingHorizontal, 0)
+            mHintTextView.setPadding(paddingHorizontal, 0, paddingHorizontal, 0)
             //Text size
-            hintTextView.textSize = HINT_BIG_SIZE + it.animatedFraction * (HINT_SMALL_SIZE - HINT_BIG_SIZE)
+            mHintTextView.textSize = HINT_BIG_SIZE + it.animatedFraction * (HINT_SMALL_SIZE - HINT_BIG_SIZE)
         }
 
-        animatorColor = ValueAnimator.ofArgb(BACKGROUND_UNFOCUSED_COLOR_STROKE,
-                                                        BACKGROUND_FOCUSED_COLOR_STROKE)
+        mAnimatorColor = ValueAnimator.ofArgb(mStrokeUnfocusedColor, mStrokeFocusedColor)
 
-
-        /* Add support for classic xml attributes */
-        val attr = IntArray(2){android.R.attr.hint; android.R.attr.inputType; android.R.attr.imeOptions}
-        val attributeArray = getContext().obtainStyledAttributes(attrs, attr)
+        /* xml attributes support */
         setHint(attributeArray.getString(0))
         setInputType(attributeArray.getInt(1, SimpleInputType.TEXT))
-        editText.imeOptions = attributeArray.getInt(2, 0)
+        mEditText.imeOptions = attributeArray.getInt(2, 0)
 
         attributeArray.recycle()
     }
@@ -126,22 +143,22 @@ class EditTextComponent @JvmOverloads constructor(
     /** Animate the background color from one state to the other */
     private fun setBackgroundState(isFocused : Boolean){
         if(isFocused){
-            animateColor(backgroundStrokeColor, BACKGROUND_FOCUSED_COLOR_STROKE)
+            animateColor(mBackgroundStrokeColor, mStrokeFocusedColor)
         }else{
-            animateColor(backgroundStrokeColor, BACKGROUND_UNFOCUSED_COLOR_STROKE)
+            animateColor(mBackgroundStrokeColor, mStrokeUnfocusedColor)
         }
     }
 
     /** Animate the hint to a smaller state **/
     private fun makeHintSmall(){
-        if(hintTextView.textSize == HINT_SMALL_SIZE.spToPx(context)) return
-        animatorHintText.start()
+        if(mHintTextView.textSize == HINT_SMALL_SIZE.spToPx(context)) return
+        mAnimatorHintText.start()
     }
 
     /** Animate the hint to a smaller state **/
     private fun makeHintBig(){
-        if(hintTextView.textSize == HINT_BIG_SIZE.spToPx(context)) return
-        animatorHintText.reverse()
+        if(mHintTextView.textSize == HINT_BIG_SIZE.spToPx(context)) return
+        mAnimatorHintText.reverse()
     }
 
     /** Animate from one color to another
@@ -150,19 +167,19 @@ class EditTextComponent @JvmOverloads constructor(
     private fun animateColor(colorStart : Int, colorEnd : Int,
                              animateBackground : Boolean = true,animateMessage : Boolean = false){
         // Setup the animation listener
-        if(colorAnimationListener == null){
-            colorAnimationListener = ValueAnimator.AnimatorUpdateListener {
+        if(mColorAnimationListener == null){
+            mColorAnimationListener = ValueAnimator.AnimatorUpdateListener {
                 if(animateBackground)
-                    backgroundDrawable.setStroke(BACKGROUND_STROKE_SIZE, it.animatedValue as Int)
+                    mBackgroundDrawable.setStroke(BACKGROUND_STROKE_SIZE, it.animatedValue as Int)
                 if(animateMessage)
-                    messageTextView.setTextColor(it.animatedValue as Int)
-                backgroundStrokeColor = it.animatedValue as Int
+                    mMessageTextView.setTextColor(it.animatedValue as Int)
+                mBackgroundStrokeColor = it.animatedValue as Int
             }
-            animatorColor.addUpdateListener(colorAnimationListener)
+            mAnimatorColor.addUpdateListener(mColorAnimationListener)
         }
 
-        animatorColor.setIntValues(colorStart, colorEnd)
-        animatorColor.start()
+        mAnimatorColor.setIntValues(colorStart, colorEnd)
+        mAnimatorColor.start()
     }
 
     /** Wrapper for to set the editText input type
@@ -171,8 +188,8 @@ class EditTextComponent @JvmOverloads constructor(
     fun setInputType(inputType: Int) {
 
         // Add the spinner on the fly for number dialogs
-        numberSpinner.visibility = if (inputType == PHONE) VISIBLE else GONE
-        numberSpinner.isEnabled = inputType == PHONE
+        mNumberSpinner.visibility = if (inputType == PHONE) VISIBLE else GONE
+        mNumberSpinner.isEnabled = inputType == PHONE
 
         // Set the custom image resource
         val imageResource : Int = when(inputType){
@@ -184,58 +201,58 @@ class EditTextComponent @JvmOverloads constructor(
             else -> android.R.color.transparent
         }
 
-        decorativeImage.setImageResource(imageResource)
+        mDecorativeImage.setImageResource(imageResource)
 
         // Pass the type to the editText
-        editText.inputType = inputType
+        mEditText.inputType = inputType
     }
 
     /** Set an error message and change to the appropriate color */
     fun setErrorMessage(message : String){
-        messageTextView.text = message
-        animateColor(backgroundStrokeColor, Color.RED, animateMessage = true)
+        mMessageTextView.text = message
+        animateColor(mBackgroundStrokeColor, mStrokeErrorColor, animateMessage = true)
     }
 
     /** Set a nice validation message and change to the appropriate color */
     fun setValidationMessage(message: String){
-        messageTextView.text = message
-        animateColor(backgroundStrokeColor, Color.GREEN, animateMessage = true)
+        mMessageTextView.text = message
+        animateColor(mBackgroundStrokeColor, mStrokeSuccessColor, animateMessage = true)
     }
 
     /** Remove the message from the layout, at least visually */
     fun removeMessage(){
-        messageTextView.text = ""
+        mMessageTextView.text = ""
     }
 
     /* Wrappers for some usual stuff for an EditText, since we don't want to pass the it directly */
     /** @return The text as a string, with the number prefix if required */
     fun getText() : String {
-        var text = editText.text.toString()
-        if(editText.inputType == PHONE)
-            text = numberSpinner.selectedItem.toString() + text
+        var text = mEditText.text.toString()
+        if(mEditText.inputType == PHONE)
+            text = mNumberSpinner.selectedItem.toString() + text
 
         return text
     }
 
     /** Wrapper for setText from editText */
     fun setText(text : String){
-        editText.setText(text)
+        mEditText.setText(text)
     }
 
     /** Set the hint text on the animated textview */
     fun setHint(hint : String?){
-        hintTextView.visibility = if (hint == null || hint.isEmpty() ) INVISIBLE else VISIBLE
-        hintTextView.text = hint
+        mHintTextView.visibility = if (hint == null || hint.isEmpty() ) INVISIBLE else VISIBLE
+        mHintTextView.text = hint
     }
 
     /** Wrapper to add to the TextWatcher */
     fun setTextWatcher(watcher: TextWatcher){
-        editText.addTextChangedListener(watcher)
+        mEditText.addTextChangedListener(watcher)
     }
 
     /** Wrapper to remove the TextWatcher */
     fun removeTextWatcher(watcher: TextWatcher){
-        editText.removeTextChangedListener(watcher)
+        mEditText.removeTextChangedListener(watcher)
     }
 
     /** Wrapper for notifying focus change */
