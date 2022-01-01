@@ -18,6 +18,32 @@
         app:layout_constraintRight_toRightOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
+    <Button
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+
+        android:drawableTop="@drawable/ic_date"
+        android:text="text"
+
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <fr.spse.components_plus.components.ActionBarComponent
+        android:id="@+id/component_2"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:elevation="15dp"
+
+        app:item1Text="Salut"
+        app:item2Drawable="@drawable/ic_date"
+        app:item3Text="Test"
+        app:item3Drawable="@drawable/ic_mail"
+        app:layout_constraintBottom_toTopOf="@+id/component_1"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
     <fr.spse.components_plus.components.EditTextComponent
         android:id="@+id/component_1"
         android:layout_width="match_parent"
@@ -36,7 +62,7 @@
         android:layout_marginHorizontal="25dp"
 
 
-        android:inputType="textEmailAddress"
+
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.0"
@@ -45,13 +71,14 @@
         app:layout_constraintVertical_bias="0.647" />
 
     <fr.spse.components_plus.components.EditTextComponent
+        android:id="@+id/component_3"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginHorizontal="25dp"
         android:layout_marginEnd="8dp"
 
 
-        android:inputType="textEmailAddress"
+        android:inputType="numberPassword"
         app:layout_constraintBottom_toTopOf="@+id/textView"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toTopOf="parent"
