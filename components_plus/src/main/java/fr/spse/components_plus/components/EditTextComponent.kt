@@ -13,6 +13,7 @@ import android.view.Gravity
 import android.view.View
 import android.widget.*
 import androidx.constraintlayout.widget.ConstraintLayout
+import androidx.core.content.res.ResourcesCompat
 import fr.spse.components_plus.R
 import fr.spse.components_plus.utils.SimpleInputType
 import fr.spse.components_plus.utils.SimpleInputType.DATE
@@ -38,8 +39,8 @@ private const val HINT_BIG_SIZE = 20F
  * Some android xml settings are supported such as hint, input type and ime options
  */
 class EditTextComponent @JvmOverloads constructor(
-    context: Context, attrs: AttributeSet? = null
-) : ConstraintLayout(context, attrs){
+    context: Context, attrs: AttributeSet? = null, defStyleAttr : Int = 0, defStyleRes : Int = 0
+) : ConstraintLayout(context, attrs, defStyleAttr, defStyleRes){
     /* Colors */
     private val mStrokeUnfocusedColor : Int
     private val mStrokeFocusedColor : Int
@@ -73,7 +74,8 @@ class EditTextComponent @JvmOverloads constructor(
                                 android.R.attr.colorBackground,     // background color
                                 R.attr.colorControlNormal,          // stroke focused color
                                 R.attr.colorControlActivated,       // Stroke focused color
-                                R.attr.colorError                   // Error color
+                                R.attr.colorError,                  // Error color
+                                android.R.attr.fontFamily           // Font for all elements
         )
         val attributeArray = getContext().obtainStyledAttributes(attrs, attr)
 
@@ -130,10 +132,14 @@ class EditTextComponent @JvmOverloads constructor(
 
         mAnimatorColor = ValueAnimator.ofArgb(mStrokeUnfocusedColor, mStrokeFocusedColor)
 
+        // Prepare hint
+        mHintTextView.textSize = HINT_BIG_SIZE
+
         /* xml attributes support */
         setHint(attributeArray.getString(0))
         setInputType(attributeArray.getInt(1, SimpleInputType.TEXT))
         mEditText.imeOptions = attributeArray.getInt(2, 0)
+
 
         attributeArray.recycle()
     }
